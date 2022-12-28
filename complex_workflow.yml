@@ -1,0 +1,156 @@
+---
+Comment: A description of my state machine
+StartAt: trigger_family_present
+States:
+  trigger_family_present:
+    Type: Choice
+    Choices:
+    - Next: Notification:Job Failure raise Incident
+    Default: trigger_family_remove
+  Notification:Job Failure raise Incident:
+    Type: Task
+    Resource: arn:aws:states:::sns:publish
+    Parameters:
+      Message.$: "$"
+    Next: Fail
+  trigger_family_remove:
+    Type: Task
+    Resource: arn:aws:states:::batch:submitJob.sync
+    Parameters: {}
+    Next: family_file_list
+  family_file_list:
+    Type: Task
+    Resource: arn:aws:states:::batch:submitJob.sync
+    Parameters: {}
+    Next: dbupload
+  dbupload:
+    Type: Task
+    Resource: arn:aws:states:::batch:submitJob.sync
+    Parameters: {}
+    Next: dbupload_Error_Check
+  dbupload_Error_Check:
+    Type: Choice
+    Choices:
+    - Next: trigger_error_check
+    Default: algo1
+  trigger_error_check:
+    Type: Task
+    Resource: arn:aws:states:::batch:submitJob.sync
+    Parameters: {}
+    Next: Notification:Job Failed after DB upload
+  Notification:Job Failed after DB upload:
+    Type: Task
+    Resource: arn:aws:states:::sns:publish
+    Parameters:
+      Message.$: "$"
+    Next: trigger_tar
+  algo1:
+    Type: Task
+    Resource: arn:aws:states:::batch:submitJob.sync
+    Parameters: {}
+    Next: Algo1 Error_Check
+  Algo1 Error_Check:
+    Type: Choice
+    Choices:
+    - Next: Algo1 Error_Check-1
+    Default: logic
+  Algo1 Error_Check-1:
+    Type: Choice
+    Choices:
+    - Next: Notification:Algo1 Exit Code1
+    Default: family_processed_check
+  Notification:Algo1 Exit Code1:
+    Type: Task
+    Resource: arn:aws:states:::sns:publish
+    Parameters:
+      Message.$: "$"
+    Next: trigger_tar
+  trigger_tar:
+    Type: Task
+    Resource: arn:aws:states:::batch:submitJob.sync
+    Parameters: {}
+    End: true
+  logic:
+    Type: Task
+    Resource: arn:aws:states:::batch:submitJob.sync
+    Parameters: {}
+    Next: Newton Error_Check
+  Newton Error_Check:
+    Type: Choice
+    Choices:
+    - Next: Newton Error_Check-1
+    Default: algo2
+  Newton Error_Check-1:
+    Type: Choice
+    Choices:
+    - Next: Notification:Logic Exit Code1
+    Default: family_processed_check
+  Notification:Logic Exit Code1:
+    Type: Task
+    Resource: arn:aws:states:::sns:publish
+    Parameters:
+      Message.$: "$"
+    Next: trigger_tar
+  algo2:
+    Type: Task
+    Resource: arn:aws:states:::batch:submitJob.sync
+    Parameters: {}
+    Next: Algo2 Error_Check
+  Algo2 Error_Check:
+    Type: Choice
+    Choices:
+    - Next: Algo2 Error_Check-1
+    Default: calc
+  Algo2 Error_Check-1:
+    Type: Choice
+    Choices:
+    - Next: Notification:Algo2 Exit Code1
+    Default: family_processed_check
+  Notification:Algo2 Exit Code1:
+    Type: Task
+    Resource: arn:aws:states:::sns:publish
+    Parameters:
+      Message.$: "$"
+    Next: trigger_tar
+  calc:
+    Type: Task
+    Resource: arn:aws:states:::batch:submitJob.sync
+    Parameters: {}
+    Next: Cal Error_Check
+  Cal Error_Check:
+    Type: Choice
+    Choices:
+    - Next: Cal Error_Check-1
+    Default: hub
+  Cal Error_Check-1:
+    Type: Choice
+    Choices:
+    - Next: Notification:Calc Exit Code1
+    Default: family_processed_check
+  Notification:Calc Exit Code1:
+    Type: Task
+    Resource: arn:aws:states:::sns:publish
+    Parameters:
+      Message.$: "$"
+    Next: trigger_tar
+  hub:
+    Type: Task
+    Resource: arn:aws:states:::batch:submitJob.sync
+    Parameters: {}
+    Next: Wltphub Error_Check
+  Wltphub Error_Check:
+    Type: Choice
+    Choices:
+    - Next: Notification:hub Exit Code1
+    Default: family_processed_check
+  Notification:hub Exit Code1:
+    Type: Task
+    Resource: arn:aws:states:::sns:publish
+    Parameters:
+      Message.$: "$"
+    Next: trigger_tar
+  family_processed_check:
+    Type: Pass
+    Next: family_file_list
+  Fail:
+    Type: Fail
