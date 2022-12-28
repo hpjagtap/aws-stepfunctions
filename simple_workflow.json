@@ -1,0 +1,17 @@
+{
+  "Comment": "A description of my state machine",
+  "StartAt": "TestDir1",
+  "States": {
+    "TestDir1": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::batch:submitJob.sync",
+      "Parameters": {
+        "JobName": "TestDir1",
+        "JobDefinition": "arn:aws:batch:region:xxxxxxx:job-definition/listEfsDir:11",
+        "JobQueue": "arn:aws:batch:region:xxxxx:job-queue/BatchEfsJQ"
+      },
+      "End": true
+    }
+  },
+  "TimeoutSeconds": 600
+}
